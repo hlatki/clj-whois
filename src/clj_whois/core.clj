@@ -1,6 +1,7 @@
 (ns clj-whois.core
   (:import [org.apache.commons.net.whois WhoisClient]))
 
+(def iana-whois-server "whois.iana.org")
 
 (defn query
   "Wraps WhoisClient.query.
@@ -11,7 +12,7 @@
     (whois \"whois.nic.it\" \"google.it\")
     (whois \"whois.iana.org\" \"com.\") -- this gets the whois server for the given tld
   "
-  ([url] (whois WhoisClient/DEFAULT_HOST url))
+  ([url] (query WhoisClient/DEFAULT_HOST url))
   ([whois-endpoint url]
   (let [wis (WhoisClient.)]
     (. wis connect whois-endpoint)
@@ -21,3 +22,31 @@
                      "Failed"))]
       (. wis disconnect)
       ret))))
+
+(defn parse-iana-response
+  "Parse the response from iana-whois-server"
+  [response]
+  (let [matches (re-find #"whois:\s+(\S+)" response)]
+    (if matches
+      (peek matches)
+      false)))
+
+(defn get-whois-server-for-tld
+  "Get the whois server for a tld from IANA"
+  [tld]
+  (parse-iana-response (query iana-whois-server tld)))
+
+(defn get-tld-from-url
+  [url]
+  (re-find #"\.\w+$" url))
+
+(defn whois
+  "Barebones whois lookup
+  TODO: implement = stuff, actually parse response etc."
+  [url]
+  (let [tld (get-tld-from-url url)
+        whois-server (get-whois-server-for-tld tld)]
+    (if whois-server
+      (query whois-server url)
+      (str "Error: could not find whois server for TLD " tld))))
+
