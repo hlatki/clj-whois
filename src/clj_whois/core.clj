@@ -1,5 +1,6 @@
 (ns clj-whois.core
-  (:import [org.apache.commons.net.whois WhoisClient]))
+  (:import [org.apache.commons.net.whois WhoisClient])
+  (:require [clj-whois.whois-servers :as whois-servers]))
 
 (def iana-whois-server "whois.iana.org")
 
@@ -32,12 +33,14 @@
       false)))
 
 (defn get-whois-server-for-tld
-  "Get the whois server for a tld from IANA
-  TODO: use <tld>.whois-servers.net CNAMES instead so that there's only one request?"
+  "Get the whois server for a given TLD."
   [tld]
-  (parse-iana-response (query iana-whois-server tld)))
+  (if-let [whois-server (whois-servers/tld-to-whois-server-map tld)]
+      whois-server
+      (parse-iana-response (query iana-whois-server tld))))
 
 (defn get-tld-from-url
+  "Extract TLD from a URL"
   [url]
   (re-find #"\.\w+$" url))
 
