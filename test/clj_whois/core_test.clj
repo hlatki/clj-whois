@@ -11,3 +11,7 @@
 (deftest get-whois-from-invalid-IANA-response
   (testing "Expect false instead of whois server from invalid IANA respinse"
     (is (= false (parse-iana-response "nope")))))
+
+(deftest get-whois-from-empty-IANA-response
+  (testing "Expect false instead of whois server from empty IANA respinse"
+    (is (= false (parse-iana-response "")))))
