@@ -32,7 +32,8 @@
       false)))
 
 (defn get-whois-server-for-tld
-  "Get the whois server for a tld from IANA"
+  "Get the whois server for a tld from IANA
+  TODO: use <tld>.whois-servers.net CNAMES instead so that there's only one request?"
   [tld]
   (parse-iana-response (query iana-whois-server tld)))
 
