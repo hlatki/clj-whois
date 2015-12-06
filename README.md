@@ -5,12 +5,12 @@ your own risk.
 
 ## Usage
 
-  (ns clj-whois.core-test
-    (:require [clj-whois.core :as clj-whois]))
+    (ns clj-whois.core-test
+      (:require [clj-whois.core :as clj-whois]))
 
     (clj-whois/whois "google.it")
 
-## TODOS
+## TODO
 - [ ] Figure out how to handle the wildly different formats returned by WHOIS servers
 - [ ] Parse WHOIS responses instead of just returning strings
 
