@@ -1,10 +1,18 @@
 # clj-whois
 
-A Clojure library designed to ... well, that part is up to you.
+A Clojure library for WHOIS. The code is very much in progress, so use at
+your own risk.
 
 ## Usage
 
-FIXME
+  (ns clj-whois.core-test
+    (:require [clj-whois.core :as clj-whois]))
+
+    (clj-whois/whois "google.it")
+
+## TODOS
+- [ ] Figure out how to handle the wildly different formats returned by WHOIS servers
+- [ ] Parse WHOIS responses instead of just returning strings
 
 ## License
 
