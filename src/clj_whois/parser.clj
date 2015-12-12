@@ -1,10 +1,14 @@
 ;; A first attempt at parsing responses
 (ns clj-whois.parser)
 
-;;(defn find-attribute [attribute text]
-;;  (let [attribute-pattern "\\s*%s\\s*:\\s+(\\S+)"
-;;        new-regex (re-pattern (format attribute-pattern attribute))]
-;;    (re-seq new-regex text)))
+
+(defmacro no-exception
+  "Return nil instead of throwing an exception"
+  [method object]
+  `(try (~method  ~object)
+       (catch Exception ~'e nil)))
+
+
 
 (defn find-value [attribute text]
   "Try to find an attribute in a response. Returns the raw list of matches for processing"
