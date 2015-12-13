@@ -28,13 +28,27 @@
 
 ;; new approach "mapify" the response and then standardize it
 ;; regex for "key" in response
+;;TODO: Handle case where there isn't any whitespace before the key (i.e. key at beginning of string)
 (def whois-key-regex #"[\n\r\t]+[\w '-]+:")
 
-;; TODO: cleanup
+(defn- get-value-from-response
+  "get that value -- helper function for mapify response"
+  [response prev-key-end matcher response-count]
+  (let [value-end (dec (val-not-exception .start matcher (inc response-count)))]
+    (if (<= value-end prev-key-end)
+      ""
+      (subs response prev-key-end value-end))))
+
+
+
+
+;; TODO: cleanup code
+;; TODO: trim key and value
 ;; TODO: what to do about problem parsing the end
 ;; TODO: strip newlines out of key
 ;; TODO: get first key and value
-;; TODO:
+;; TODO: don't include : in key
+;; TODO: "nested" keys -- i.e. key where the values are actually keys -- right now they get flattened
 (defn mapify-response
   "Convert a WHOIS response to a map.
   This is based on the assumption that \"keys\" are defined by
@@ -47,6 +61,13 @@
              prev-key-end nil ;; TODO: put all prev stuff in a map to make it easier to check
              resp-map {}
              curr-key (re-find matcher)]
+        (println "****** Entering loop")
+        (println (str "prev-key: " prev-key))
+        (println (str "prev-key-end: " prev-key-end))
+        (println (str "resp-map: " resp-map))
+        (println (str "curr-key: " curr-key))
+        (println (str "key end: " (val-not-exception .end matcher response-count)))
+        (println (str "val-end: " (dec (val-not-exception .start matcher (inc response-count)))))
         (if (not curr-key)
           (if prev-key ;;reached the end of the string, need to associate the value with the prev key
             (assoc resp-map prev-key (subs response (inc prev-key-end)))
@@ -56,8 +77,10 @@
               (recur curr-key key-end resp-map (re-find matcher))
               (recur curr-key
                      key-end
-                     (assoc resp-map prev-key (subs response prev-key-end (dec (val-not-exception .start matcher (inc response-count)))))
+                     (assoc resp-map prev-key (get-value-from-response response prev-key-end matcher response-count))
                      (re-find matcher))))))))
+
+
 
 
 
