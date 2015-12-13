@@ -1,5 +1,6 @@
 ;; A first attempt at parsing responses
-(ns clj-whois.parser)
+(ns clj-whois.parser
+  (:require [clojure.string :as string]))
 
 
 (defn- excep-helper
@@ -34,7 +35,7 @@
 (defn- get-value-from-response
   "get that value -- helper function for mapify response"
   [response prev-key-end matcher response-count]
-  (let [value-end (dec (val-not-exception .start matcher (inc response-count)))]
+  (let [value-end (val-not-exception .start matcher (inc response-count))]
     (if (<= value-end prev-key-end)
       ""
       (subs response prev-key-end value-end))))
@@ -44,15 +45,20 @@
 
 ;; TODO: cleanup code
 ;; TODO: trim key and value
-;; TODO: what to do about problem parsing the end
-;; TODO: strip newlines out of key
-;; TODO: get first key and value
 ;; TODO: don't include : in key
 ;; TODO: "nested" keys -- i.e. key where the values are actually keys -- right now they get flattened
+;; TODO: what to do about IT's missing : after Nameserver's -- need custom parser
+;;
+;;Nameservers
+;;ns0.yepa.com
+;;ns1.yepa.com
+
+
+;; This produces a lot of unneeded keys, but it looks like it's mostly getting the legitimate one...
 (defn mapify-response
   "Convert a WHOIS response to a map.
   This is based on the assumption that \"keys\" are defined by
-  [\\n\\r\\t]+[\\w '-]+: and everything until the next key is
+  whois-key-regex and everything until the next key is
   its value. This is an unproven assertion."
   [response]
   (let [matcher (re-matcher whois-key-regex response)
@@ -61,23 +67,16 @@
              prev-key-end nil ;; TODO: put all prev stuff in a map to make it easier to check
              resp-map {}
              curr-key (re-find matcher)]
-        (println "****** Entering loop")
-        (println (str "prev-key: " prev-key))
-        (println (str "prev-key-end: " prev-key-end))
-        (println (str "resp-map: " resp-map))
-        (println (str "curr-key: " curr-key))
-        (println (str "key end: " (val-not-exception .end matcher response-count)))
-        (println (str "val-end: " (dec (val-not-exception .start matcher (inc response-count)))))
         (if (not curr-key)
           (if prev-key ;;reached the end of the string, need to associate the value with the prev key
-            (assoc resp-map prev-key (subs response (inc prev-key-end)))
+            (assoc resp-map (string/trim prev-key) (string/trim (subs response (inc prev-key-end))))
             resp-map)
           (let [key-end (val-not-exception .end matcher response-count)]
             (if (not prev-key)
               (recur curr-key key-end resp-map (re-find matcher))
               (recur curr-key
                      key-end
-                     (assoc resp-map prev-key (get-value-from-response response prev-key-end matcher response-count))
+                     (assoc resp-map (string/trim prev-key) (string/trim (get-value-from-response response prev-key-end matcher response-count)))
                      (re-find matcher))))))))
 
 
@@ -99,7 +98,7 @@
     (re-seq new-regex text)))
 
 
-;; TODO: Maybe combine match in string for address/owners and leave as list for name servers etc?
+;; TODO: Maybe combine match in string for address/owners and leave as list for name servers etc? -- do as additional parsing
 (defn process-matches
   "Process list of matches from find-value.  If there is more than one match, they are combined
   (one match per line of resulting string"
