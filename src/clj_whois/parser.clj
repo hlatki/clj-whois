@@ -2,7 +2,6 @@
 (ns clj-whois.parser
   (:require [clojure.string :as string]))
 
-
 (defn- excep-helper
   "Actually do the work for val-not-exception macro"
   ([method object] (excep-helper method object nil))
@@ -19,14 +18,6 @@
   (apply excep-helper args))
 
 
-;;(defmacro val-not-exception
-;;
-;;  ([method object] (val-not-exception &form &env method object 1))
-;;  ([method object v]
-;;  `(try (~method  ~object)
-;;       (catch Exception ~'e ~v))))
-
-
 ;; new approach "mapify" the response and then standardize it
 ;; regex for "key" in response
 ;;TODO: Handle case where there isn't any whitespace before the key (i.e. key at beginning of string)
@@ -40,11 +31,7 @@
       ""
       (subs response prev-key-end value-end))))
 
-
-
-
 ;; TODO: cleanup code
-;; TODO: trim key and value
 ;; TODO: don't include : in key
 ;; TODO: "nested" keys -- i.e. key where the values are actually keys -- right now they get flattened
 ;; TODO: what to do about IT's missing : after Nameserver's -- need custom parser
@@ -59,13 +46,14 @@
   "Convert a WHOIS response to a map.
   This is based on the assumption that \"keys\" are defined by
   whois-key-regex and everything until the next key is
-  its value. This is an unproven assertion."
+  its value. This is an unproven assertion. The raw response is included
+  as the value of :raw-response"
   [response]
   (let [matcher (re-matcher whois-key-regex response)
         response-count (count response)]
       (loop [prev-key nil
              prev-key-end nil ;; TODO: put all prev stuff in a map to make it easier to check
-             resp-map {}
+             resp-map {:raw-respone response}
              curr-key (re-find matcher)]
         (if (not curr-key)
           (if prev-key ;;reached the end of the string, need to associate the value with the prev key
@@ -82,6 +70,13 @@
 
 
 
+(defmulti tld-based-parser (fn [tld-response-map] (:tld tld-response-map)))
+(defmethod tld-based-parser :default
+  [tld-response-map]
+  (mapify-response (:response tld-response-map)))
+(defmethod tld-based-parser "it"
+  [tld-response-map]
+  (assoc (mapify-response (:response tld-response-map)) :foo "poop"))
 
 
 
